@@ -8,10 +8,10 @@ This tool is designed to perform word alignment for machine translation tasks us
 # Table of Contents
 1. Installation
 2. Usage
-3. Mode
-4. Sample Data
-5. Results
-6. Contributors
+3. Models
+5. Sample Data
+6. Results
+7. Contributors
 
 
 # Installation
@@ -45,8 +45,6 @@ Training and Alignment
 **python ibm2.py -n 100000 | python score-alignments**
 
 # Models
-# Model Type: 
-
 
 1. IBM Model 1: 
 * IBM Model 1, is a simpler model for word alignment. It estimates the conditional probability of a foreign word given an English word. 
