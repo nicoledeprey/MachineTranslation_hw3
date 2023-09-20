@@ -19,11 +19,11 @@ This tool is designed to perform word alignment for machine translation tasks us
 
 
 2. Clone the repository to your local machine:  
-# git clone https://github.com/janvi-prasad/MachineTranslation_HW2.git
+   **git clone https://github.com/janvi-prasad/MachineTranslation_HW2.git**
 
 
 3. Navigate to the project directory:  
-# cd hw2
+**cd hw2**
 
 
 
@@ -33,16 +33,16 @@ Training and Alignment
 
 
 1. Train the alignment models using the following command:
-# python ibm2.py -n 100000 > alignment
+**python ibm2.py -n 100000 > alignment**
   This will train IBM Model 2, estimating word alignment probabilities and stores the output in the file alignment.
 
 
 2. To compute accuracy, run:
-# Get-Content alignment | python score-alignments 
+**Get-Content alignment | python score-alignments**
 
 
-3. To run the machine translation in one command, you can run: 
-# python ibm2.py -n 100000 | python score-alignments 
+4. To run the machine translation in one command, you can run: 
+**python ibm2.py -n 100000 | python score-alignments**
 
 # Models
 # Model Type: 
@@ -54,7 +54,7 @@ Training and Alignment
 * It calculates alignment probabilities based on the Dice coefficient.
 
 
-* # python ibm1.py -n 100000 | python score-alignments -> gives an AER value of 0.369
+  **python ibm1.py -n 100000 | python score-alignments -> gives an AER value of 0.369**
 
 
 
@@ -65,7 +65,7 @@ Training and Alignment
 * Alignment probabilities are calculated using Model 2, which involves both the E-step and M-step to estimate alignment and translation probabilities.
 
 
-* # python ibm2.py -n 100000 | python score-alignments -> gives an AER value of 0.339943
+  **python ibm2.py -n 100000 | python score-alignments -> gives an AER value of 0.339943**
 
 
 
