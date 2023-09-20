@@ -54,7 +54,8 @@ Training and Alignment
 * It calculates alignment probabilities based on the Dice coefficient.
 
 
-  **python ibm1.py -n 100000 | python score-alignments -> gives an AER value of 0.369**
+  **python ibm1.py -n 100000 | python score-alignments**
+   This gives an AER value of 0.369
 
 
 
@@ -65,7 +66,8 @@ Training and Alignment
 * Alignment probabilities are calculated using Model 2, which involves both the E-step and M-step to estimate alignment and translation probabilities.
 
 
-  **python ibm2.py -n 100000 | python score-alignments -> gives an AER value of 0.339943**
+  **python ibm2.py -n 100000 | python score-alignments**
+  This gives an AER value of 0.339943
 
 
 
