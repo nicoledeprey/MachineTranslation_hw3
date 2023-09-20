@@ -34,15 +34,14 @@ Training and Alignment
 
 1. Train the alignment models using the following command:
 Python ibm2.py -n 100000 > alignment.
+  This will train IBM Model 2, estimating word alignment probabilities and stores the output in the file alignment.
 
-This will train IBM Model 2, estimating word alignment probabilities and stores the output in the file alignment.
 
-
-3. To compute accuracy, run:
+2. To compute accuracy, run:
 Get-Content alignment | python score-alignments 
 
 
-4. To run the machine translation in one command, you can run: 
+3. To run the machine translation in one command, you can run: 
 python ibm2.py -n 100000 | python score-alignments 
 
 # Models
