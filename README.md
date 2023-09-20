@@ -83,6 +83,7 @@ Sample bilingual corpora and pre-trained models are provided for demonstration p
 
 # Results
 The code results should produce an alignment error rate of 0.339943 (see figure below)
+<img width="1710" alt="image" src="https://github.com/janvi-prasad/MachineTranslation_HW2/assets/60441779/b621a58e-4c8d-4bc5-9ad4-a92c28afcd3f">
 
 
   
