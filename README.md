@@ -18,11 +18,11 @@ This tool is designed to perform word alignment for machine translation tasks us
 1. Make sure you have python and github on your system
 
 
-2. Clone the repository to your local machine:
+2. Clone the repository to your local machine:  
 git clone https://github.com/janvi-prasad/MachineTranslation_HW2.git
 
 
-3. Navigate to the project directory:
+3. Navigate to the project directory:  
 cd hw2
 
 
