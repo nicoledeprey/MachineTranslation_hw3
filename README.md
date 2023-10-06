@@ -1,6 +1,4 @@
-
-
-# Machine Translation Alignment Tool
+# Machine Translation Decoder
 # Overview
 This tool is designed to perform a beam-search decoder which is capable of reordering between a source language (e.g., French) and a target language (e.g.,English) based on parallel bilingual corpora.
 
@@ -43,8 +41,10 @@ Running the Decoder
 # Algorithms
 
 1. Beam Search 
+This produces a total corpus log probability (LM+TM) of -1377.089720. A description of the Beam Search Algorithm can be found in the MathDescription.pdf. 
 
 2. Coverage Vector
+This produces a total corpus log probability (LM+TM) of -1259.093581. A description of the Coverage Vector Algorithm can be found in the MathDescription.pdf. 
 
 
 # Results
