@@ -49,7 +49,7 @@ This produces a total corpus log probability (LM+TM) of -1259.093581. A descript
 
 # Results
 The code results should produce a total corpus log probability (LM+TM) of -2026.070383 (see figure below)
-<img width="1710" alt="image" src="decode-ext_results.jpeg">
+!(decode-ext_results.jpeg)
 
 
   
