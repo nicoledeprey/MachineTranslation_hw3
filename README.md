@@ -6,8 +6,7 @@ This tool is designed to perform a beam-search decoder which is capable of reord
 1. Installation
 2. Usage
 3. Algorithms
-4. Results
-5. Contributors
+4. Contributors
 
 
 # Installation
@@ -45,13 +44,6 @@ This produces a total corpus log probability (LM+TM) of -1377.089720. A descript
 
 2. Coverage Vector
 This produces a total corpus log probability (LM+TM) of -1259.093581. A description of the Coverage Vector Algorithm can be found in the MathDescription.pdf. 
-
-
-# Results
-The code results should produce a total corpus log probability (LM+TM) of -2026.070383 (see figure below)
-!(decode-ext_results.jpeg)
-
-
   
 
 # Contributors
