@@ -1,0 +1,159 @@
+#!/usr/bin/env python
+import optparse
+import sys
+import models
+from collections import namedtuple, defaultdict
+import heapq
+from functools import reduce
+ 
+hypothesis = namedtuple("hypothesis", "logprob, lm_state, predecessor, phrase, coverage, end")
+ 
+def update_heap(heap, size, value):
+    """Maintain a fixed-size priority queue."""
+    if len(heap) < size:
+        heapq.heappush(heap, value)
+    else:
+        heapq.heappushpop(heap, value)
+ 
+def bitmap(sequence):
+    """Generate a coverage bitmap for a sequence of indexes."""
+    return reduce(lambda x, y: x | y, map(lambda i: 1 << i, sequence), 0)
+ 
+def get_options():
+    """Parse command-line options."""
+    optparser = optparse.OptionParser()
+    optparser.add_option("-i", "--input", dest="input", default="data/input", help="File containing sentences to translate (default=data/input)")
+    optparser.add_option("-t", "--translation-model", dest="tm", default="data/tm", help="File containing translation model (default=data/tm)")
+    optparser.add_option("-l", "--language-model", dest="lm", default="data/lm", help="File containing ARPA-format language model (default=data/lm)")
+    optparser.add_option("-s", "--stack-size", dest="s", default=50, type="int", help="Maximum stack size (default=10)")
+    optparser.add_option("-k", "--reordering-limit", dest="k", default=50, type="int", help="Maximum reordering jump (default=7)")
+    optparser.add_option("-d", "--threshold", dest="delta", default=5.0, type="float", help="Threshold value for pruning (default=5.0)")
+    return optparser.parse_args()[0]
+ 
+# Pre-compute the future cost table
+def precompute_future_costs(french, tm):
+    n = len(french)
+    cost = [[float('inf') for _ in range(n+1)] for _ in range(n)]
+    for i in range(n):
+        for j in range(i+1, n+1):
+            if french[i:j] in tm:
+                cost[i][j] = min(phrase.logprob for phrase in tm[french[i:j]])
+    for span in range(2, n+1):
+        for i in range(n-span+1):
+            j = i + span
+            for k in range(i+1, j):
+                cost[i][j] = min(cost[i][j], cost[i][k] + cost[k][j])
+    return cost
+ 
+def future_cost_estimate(coverage, cost):
+    future_cost = 0.0
+    start = -1
+    for j, translated in enumerate(coverage):
+        if not translated:
+            if start == -1:
+                start = j
+        else:
+            if start > -1:
+                future_cost += cost[start][j]
+            start = -1
+    return future_cost
+ 
+def decode(french, tm, lm, opts):
+    """Decode a sentence using beam search."""
+    initial_hypothesis = hypothesis(0.0, lm.begin(), None, None, 0, 0)
+    beams = [defaultdict(list) for _ in french] + [defaultdict(list)]
+    beams[0][lm.begin()] = [initial_hypothesis]
+    cost = precompute_future_costs(french, tm)
+   
+    for i, beam in enumerate(beams[:-1]):
+        max_logprob = max(h.logprob for h_list in beam.values() for h in h_list)
+        for h_list in sorted(beam.values(), key=lambda x: -x[0].logprob)[:opts.s]:  # Better pruning
+            for h in h_list:
+                if h.logprob >= max_logprob - opts.delta:
+                    for j in range(i+1, min(i+1+opts.k, len(french)+1)):  # Distortion Limit
+                        extend_hypothesis(french, h, j, beams, tm, lm, opts, cost)
+                # Early Stopping
+                if h.coverage == (1 << len(french)) - 1:
+                    return extract_english(h)
+    return extract_best_translation(beams)
+ 
+
+def extend_hypothesis(french, h, j, beams, tm, lm, opts, cost):
+    """Extend a given hypothesis with a new phrase."""
+    coverage = bitmap(range(h.end, j))
+    if not h.coverage & coverage:
+        if french[h.end:j] not in tm:  # Check if the phrase exists in the translation model
+            return
+       
+        # Optimization 1: Limiting reordering. If the jump is too large, skip.
+        if j - h.end > opts.k:
+            return
+       
+        # Optimization 2: Considering top-N phrases based on their probabilities
+        top_phrases = sorted(tm[french[h.end:j]], key=lambda p: p.logprob, reverse=True)[:opts.s]
+       
+        new_coverage = h.coverage | coverage
+        for phrase in top_phrases:
+            logprob = h.logprob + phrase.logprob
+            lm_state = h.lm_state
+            for word in phrase.english.split():
+                lm_state, word_logprob = lm.score(lm_state, word)
+                logprob += word_logprob
+            logprob += lm.end(lm_state) if j == len(french) else 0.0
+            logprob += future_cost_estimate([1 if i & new_coverage else 0 for i in range(len(french))], cost)  # Add future cost estimate
+            new_hypothesis = hypothesis(logprob, lm_state, h, phrase, new_coverage, j)
+           
+            # Check if we already have a hypothesis with the same lm_state and coverage
+            existing_hypotheses = beams[j].get(lm_state, [])
+            should_add = True
+            for idx, existing_hypo in enumerate(existing_hypotheses):
+                if existing_hypo.coverage == new_hypothesis.coverage:
+                    should_add = False
+                    # Replace the existing hypothesis if the new one has a higher logprob
+                    if existing_hypo.logprob < new_hypothesis.logprob:
+                        beams[j][lm_state][idx] = new_hypothesis
+                    break
+           
+    # If there's no existing hypothesis with the same state and coverage, add the new one
+            if should_add:
+                update_heap(beams[j][lm_state], opts.s, new_hypothesis)
+            else:
+        # Recombination: Merge hypotheses with the same coverage and LM state
+                existing_hypotheses = beams[j][lm_state]
+                for idx, existing_hypo in enumerate(existing_hypotheses):
+                    if existing_hypo.coverage == new_hypothesis.coverage and existing_hypo.lm_state == new_hypothesis.lm_state:
+                # Keep the hypothesis with the higher log probability
+                        if existing_hypo.logprob < new_hypothesis.logprob:
+                            beams[j][lm_state][idx] = new_hypothesis
+                        break
+ 
+
+def extract_best_translation(beams):
+    """Extract the best translation from the beams."""
+    winner = max(beams[-1].values(), key=lambda h_list: max(h_list, key=lambda h: h.logprob))
+    if winner:
+        best_hypothesis = winner[0]
+        return extract_english(best_hypothesis)
+    return ""
+ 
+def extract_english(h):
+    """Recurse back to extract the full English sentence."""
+    return "" if h.predecessor is None else f"{extract_english(h.predecessor)}{h.phrase.english} "
+ 
+def main():
+    opts = get_options()
+    tm = models.TM(opts.tm, sys.maxsize)
+    lm = models.LM(opts.lm)
+    french_sentences = [tuple(line.strip().split()) for line in open(opts.input).readlines()]
+ 
+    # Handle unknown words
+    for word in set(sum(french_sentences,())):
+        if (word,) not in tm:
+            tm[(word,)] = [models.phrase(word, 0.0)]
+ 
+    sys.stderr.write(f"Decoding {opts.input}...\n")
+    for french in french_sentences:
+        print(decode(french, tm, lm, opts))
+ 
+if __name__ == "__main__":
+    main()
